@@ -55,6 +55,18 @@ For [Renovate](https://docs.renovatebot.com/), a custom regex manager targeting 
       "datasourceTemplate": "docker",
       "depNameTemplate": "quay.io/kairos/hadron",
       "versioningTemplate": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-standard-(?:amd64|arm64)-generic-v\\d+\\.\\d+\\.\\d+-k3s-v\\d+\\.\\d+\\.\\d+-k3s1$"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^upgrades/.*\\.ya?ml$"],
+      "matchStrings": [
+        "name:\\s+hadron-(?<cluster>[a-z]+)-v(?<major>\\d+)-(?<minor>\\d+)-(?<patch>\\d+)"
+      ],
+      "currentValueTemplate": "v{{{major}}}.{{{minor}}}.{{{patch}}}",
+      "autoReplaceStringTemplate": "name: hadron-{{{cluster}}}-v{{{newMajor}}}-{{{newMinor}}}-{{{newPatch}}}",
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "quay.io/kairos/hadron",
+      "versioningTemplate": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-standard-(?:amd64|arm64)-generic-v\\d+\\.\\d+\\.\\d+-k3s-v\\d+\\.\\d+\\.\\d+-k3s1$"
     }
   ],
   "packageRules": [
@@ -68,10 +80,11 @@ For [Renovate](https://docs.renovatebot.com/), a custom regex manager targeting 
 }
 ```
 
-Two things to note:
+Three things to note:
 
 - `allowedVersions` clamps updates to a single k3s minor line. This prevents a Renovate PR from silently proposing a k3s minor bump alongside a Kairos patch bump. To cross a k3s minor, edit the regex in a separate PR — forces an explicit decision.
-- To also bump the name automatically, add a second `matchStrings` entry that captures the version fragment in `metadata.name:`. Keep both entries pointed at the same `depNameTemplate` so Renovate updates them atomically in one PR.
+- The second custom manager handles `metadata.name`. `currentValueTemplate` converts the dash-format slug (`v0-3-0` → `v0.3.0`) so Renovate can compare it against the docker datasource. `autoReplaceStringTemplate` writes the new version back in dash-format. Both managers share the same `depNameTemplate`, so Renovate updates `spec.image` and `metadata.name` atomically in one PR.
+- **Do not use `extractVersionTemplate`** to parse the dash-format in `metadata.name` — it is not a valid field for Renovate custom managers and is silently ignored. The result is that `spec.image` gets bumped but `metadata.name` stays at the old version, so the operator sees no new CR and does nothing.
 
 The pattern is not superior to `generateName` — it's a different tradeoff. Pick `generateName` when you drive upgrades from a CLI or CI job. Pick static-name bump when the desired state lives in git and every change goes through a merged PR.
 
