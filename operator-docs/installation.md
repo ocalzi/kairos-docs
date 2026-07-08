@@ -117,7 +117,7 @@ spec:
 
 | Wave | Resource |
 |---|---|
-| `-20` | Any admission-policy engine you rely on (Kyverno, etc.) |
+| `-20` | `Application/kyverno` (Helm chart + `ClusterPolicy` resources) — see [Supply-chain security](supply-chain#bootstrap-ordering-with-argocd) |
 | `-10` | `Application/kairos-operator` |
 | `0` (default) | `NodeOpUpgrade`, `NodeOp`, `OSArtifact` CRs |
 
